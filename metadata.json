@@ -1,0 +1,4 @@
+{
+  "name": "Service Order Manager",
+  "description": "A comprehensive Service Order management system. Features include a dashboard with financial and operational metrics, a full CRUD interface for service orders, status filtering, and client search. Data is persisted locally in the browser."
+}
