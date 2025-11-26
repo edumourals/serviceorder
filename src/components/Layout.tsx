@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, List, PlusCircle, PenTool } from 'lucide-react';
+import { LayoutDashboard, List, PlusCircle, PenTool, LogOut } from 'lucide-react';
+import { SupabaseService } from '../services/supabase';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,6 +9,13 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate }) => {
+  const handleLogout = async () => {
+    if (window.confirm('Deseja sair do sistema?')) {
+      await SupabaseService.auth.signOut();
+      // O App.tsx detectará e atualizará a tela
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Sidebar */}
@@ -57,8 +65,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigat
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-800 text-center">
-          <p className="text-xs text-slate-500">Service Manager v1.0</p>
+        <div className="p-4 border-t border-slate-800">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-all"
+          >
+            <LogOut size={18} />
+            <span>Sair</span>
+          </button>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-slate-600">Service Manager v1.0</p>
+          </div>
         </div>
       </aside>
 

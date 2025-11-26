@@ -5,7 +5,6 @@ import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { ProductHero } from './components/ProductHero';
 import { AuthCard } from './components/AuthCard';
-import { LandingHeader } from './components/LandingHeader';
 import { supabase, SupabaseService } from './services/supabase';
 import { Loader2 } from 'lucide-react';
 
@@ -45,40 +44,22 @@ const App: React.FC = () => {
   }
 
   // ====================================================================
-  // MODO DESLOGADO: LANDING PAGE MELHORADA
+  // MODO DESLOGADO: LANDING PAGE
   // ====================================================================
   if (!session) {
     return (
-      <div className="min-h-screen bg-slate-900 relative overflow-hidden font-sans selection:bg-blue-500/30">
-        
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-           {/* Top Right Glow (Blue) */}
-           <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-3xl opacity-50"></div>
-           {/* Bottom Left Glow (Emerald) */}
-           <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-3xl opacity-30"></div>
-        </div>
-
-        {/* Header Fixo */}
-        <LandingHeader />
-
-        {/* Conteúdo Principal */}
-        <div className="relative z-10 flex flex-col justify-center min-h-screen pt-20 pb-10 px-6">
-          <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            
-            {/* Esquerda: Produto (Hero) */}
-            <div className="order-2 lg:order-1 animate-fade-in-left">
-              <ProductHero />
-            </div>
-            
-            {/* Direita: Login (Card) */}
-            <div className="order-1 lg:order-2 flex justify-center lg:justify-end animate-fade-in-right">
-              <AuthCard />
-            </div>
-            
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Esquerda: Produto */}
+          <div className="order-2 lg:order-1">
+            <ProductHero />
+          </div>
+          
+          {/* Direita: Login */}
+          <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+            <AuthCard />
           </div>
         </div>
-        
       </div>
     );
   }

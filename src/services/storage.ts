@@ -88,12 +88,12 @@ const LocalStorageService = {
 };
 
 // ====================================================================
-// 🔄 INTERRUPTOR: Escolha aqui qual serviço usar (Local ou Online)
+// 🔄 SELEÇÃO AUTOMÁTICA DE SERVIÇO
 // ====================================================================
+// Se o Supabase estiver configurado (chaves presentes), usa ele.
+// Caso contrário, usa o LocalStorage automaticamente.
+// Isso evita o erro "Supabase não configurado".
 
-// 1. Para usar LOCAL (Navegador):
-// export const StorageService = LocalStorageService;
-
-// 2. Para usar ONLINE (Supabase):
-// OBS: Preencha as chaves em 'services/supabase.ts' primeiro!
-export const StorageService = SupabaseService;
+export const StorageService = SupabaseService.isConfigured() 
+  ? SupabaseService 
+  : LocalStorageService;

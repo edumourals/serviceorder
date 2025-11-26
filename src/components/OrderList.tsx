@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StorageService } from '../services/storage';
 import { ServiceOrder, OrderStatus } from '../types';
-import { Search, Filter, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Search, Filter, Pencil, Trash2, Plus, Loader2, Printer } from 'lucide-react';
 
 interface OrderListProps {
   onEdit: (id: number) => void;
@@ -35,6 +35,136 @@ export const OrderList: React.FC<OrderListProps> = ({ onEdit, onCreate }) => {
     if (window.confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {
       await StorageService.delete(id);
       loadOrders();
+    }
+  };
+
+  const handlePrint = (order: ServiceOrder) => {
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      const date = new Date(order.openDate).toLocaleDateString('pt-BR');
+      const value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.value);
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>OS #${order.id}</title>
+            <style>
+              @page { margin: 0; size: auto; }
+              body { 
+                margin: 0; 
+                padding: 0; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 12px; 
+                color: #000;
+              }
+              .ticket {
+                width: 78mm; /* Levemente menor que 80mm para margem de segurança */
+                max-width: 78mm;
+                padding: 10px;
+                margin: 0 auto;
+              }
+              .center { text-align: center; }
+              .bold { font-weight: bold; }
+              .divider { 
+                border-top: 1px dashed #000; 
+                margin: 8px 0; 
+                width: 100%;
+              }
+              .row { 
+                display: flex; 
+                justify-content: space-between; 
+                margin-bottom: 4px;
+              }
+              .label { font-weight: bold; margin-right: 5px; }
+              .section-title {
+                margin-top: 10px;
+                font-weight: bold;
+                text-decoration: underline;
+                font-size: 13px;
+              }
+              .obs { font-size: 11px; font-style: italic; }
+              .signature-area {
+                margin-top: 30px;
+                text-align: center;
+                border-top: 1px solid #000;
+                padding-top: 5px;
+              }
+              h1 { font-size: 16px; margin: 5px 0; }
+              h2 { font-size: 14px; margin: 0; }
+              
+              @media print {
+                .no-print { display: none; }
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="ticket">
+              <div class="center">
+                <h1>SERVICE OS</h1>
+                <h2>ORDEM DE SERVIÇO</h2>
+                <div class="divider"></div>
+                <div style="font-size: 18px; font-weight: bold;">OS Nº ${order.id}</div>
+                <div>${new Date().toLocaleString('pt-BR')}</div>
+              </div>
+              
+              <div class="divider"></div>
+
+              <div>
+                <span class="label">CLIENTE:</span> ${order.clientName}
+              </div>
+              <div>
+                <span class="label">FONE:</span> ${order.clientPhone || '-'}
+              </div>
+              
+              <div class="row" style="margin-top: 5px;">
+                <div><span class="label">DATA ABER.:</span> ${date}</div>
+              </div>
+              
+              <div class="row">
+                <div><span class="label">STATUS:</span> ${order.status}</div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="section-title">DESCRIÇÃO DO SERVIÇO</div>
+              <div style="margin-top: 5px; line-height: 1.2;">
+                ${order.description}
+              </div>
+
+              ${order.observations ? `
+                <div class="section-title">OBSERVAÇÕES</div>
+                <div class="obs">${order.observations}</div>
+              ` : ''}
+
+              <div class="divider"></div>
+
+              <div class="row">
+                <span class="label">FORMA PAGTO:</span>
+                <span>${order.paymentMethod || '-'}</span>
+              </div>
+
+              <div class="row" style="font-size: 16px; margin-top: 10px;">
+                <span class="bold">TOTAL:</span>
+                <span class="bold">${value}</span>
+              </div>
+
+              <div class="signature-area">
+                Assinatura do Cliente
+              </div>
+              
+              <div class="center" style="margin-top: 15px; font-size: 10px;">
+                Obrigado pela preferência!
+              </div>
+            </div>
+
+            <script>
+              window.onload = function() { window.print(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
   };
 
@@ -143,6 +273,13 @@ export const OrderList: React.FC<OrderListProps> = ({ onEdit, onCreate }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handlePrint(order)}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Imprimir Cupom 80mm"
+                        >
+                          <Printer size={18} />
+                        </button>
                         <button
                           onClick={() => onEdit(order.id)}
                           className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

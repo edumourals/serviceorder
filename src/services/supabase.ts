@@ -2,23 +2,79 @@ import { createClient } from '@supabase/supabase-js';
 import { ServiceOrder, OrderStatus, DashboardStats } from '../types';
 
 // ==============================================================================
-// ⚠️ ÁREA DE CONFIGURAÇÃO - COLE SUAS CHAVES AQUI
-// ==============================================================================
-const SUPABASE_URL = 'https://yoxxxynkhzefkooywvqw.supabase.co'; 
-const SUPABASE_KEY = 'sb_publishable_1wUGxlogH5gOPFulEL1hMA_bv8d9vvd';
+// CONFIGURAÇÃO DO SUPABASE
 // ==============================================================================
 
-// Cria o cliente apenas se as chaves estiverem preenchidas
-const supabase = SUPABASE_URL.includes('COLE_SUA') 
-  ? null 
-  : createClient(SUPABASE_URL, SUPABASE_KEY);
+const getEnvVar = (key: string, defaultValue: string) => {
+  try {
+    // @ts-ignore
+    const env = import.meta.env;
+    return env && env[key] ? env[key] : defaultValue;
+  } catch (e) {
+    return defaultValue;
+  }
+};
+
+const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL', 'https://yoxxxynkhzefkooywvqw.supabase.co');
+const SUPABASE_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY', 'sb_publishable_1wUGxlogH5gOPFulEL1hMA_bv8d9vvd');
+
+// Verifica se as chaves foram configuradas corretamente
+const isConfigured = 
+  SUPABASE_URL && 
+  SUPABASE_KEY && 
+  !SUPABASE_URL.includes('COLE_SUA') && 
+  !SUPABASE_KEY.includes('COLE_SUA');
+
+// Cria o cliente apenas se configurado
+export const supabase = isConfigured ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 export const SupabaseService = {
+  // Propriedade para checar externamente se está ativo
+  isConfigured: () => isConfigured,
+
+  // ============================================================================
+  // AUTHENTICATION
+  // ============================================================================
   
+  auth: {
+    async getSession() {
+      if (!supabase) return null;
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+
+    async signIn(email: string, password: string) {
+      if (!supabase) throw new Error("Supabase não configurado");
+      return supabase.auth.signInWithPassword({ email, password });
+    },
+
+    async signUp(email: string, password: string) {
+      if (!supabase) throw new Error("Supabase não configurado");
+      return supabase.auth.signUp({ email, password });
+    },
+
+    async signOut() {
+      if (!supabase) return;
+      return supabase.auth.signOut();
+    },
+
+    async resetPassword(email: string) {
+      if (!supabase) throw new Error("Supabase não configurado");
+      // Redireciona para a URL atual após o reset
+      return supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+    }
+  },
+
+  // ============================================================================
+  // DATA (CRUD)
+  // ============================================================================
+
   async getAll(): Promise<ServiceOrder[]> {
     if (!supabase) return [];
     
-    // Mapeia os campos do banco (snake_case) para o app (camelCase)
+    // O RLS do banco garante que só venham as ordens do usuário logado
     const { data, error } = await supabase
       .from('service_orders')
       .select('*')
@@ -71,6 +127,9 @@ export const SupabaseService = {
   async create(order: Omit<ServiceOrder, 'id'>): Promise<ServiceOrder> {
     if (!supabase) throw new Error("Supabase não configurado");
 
+    // Pegamos o usuário atual para garantir (embora o default auth.uid() no SQL já resolva)
+    const { data: { user } } = await supabase.auth.getUser();
+
     const dbOrder = {
       client_name: order.clientName,
       client_phone: order.clientPhone,
@@ -80,7 +139,8 @@ export const SupabaseService = {
       value: order.value,
       status: order.status,
       payment_method: order.paymentMethod,
-      observations: order.observations
+      observations: order.observations,
+      user_id: user?.id // Associa explicitamente ao usuário logado
     };
 
     const { data, error } = await supabase
@@ -138,8 +198,6 @@ export const SupabaseService = {
   },
 
   async getStats(): Promise<DashboardStats> {
-    // Para simplificar, buscamos tudo e calculamos no front.
-    // Em apps gigantes, faríamos queries SQL específicas (RPC ou Views).
     const orders = await this.getAll();
     
     const now = new Date();
